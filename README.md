@@ -1,82 +1,107 @@
-# Campus Hiring Evaluation — Backend Assignment
+# Campus Hiring Evaluation — Backend
 
-**Company:** Affordmed (Afford Medical Technologies Pvt. Ltd.)
-**Track:** Backend
-**Candidate:** Priyanka Jakkampudi | Roll No: ap23110011309
+**Company:** Affordmed (Afford Medical Technologies Pvt. Ltd.)  
+**Role:** Backend Developer  
+**Candidate:** Priyanka Jakkampudi  
+**Roll No:** ap23110011309  
+**GitHub:** https://github.com/Priyanka-2027/AP23110011309
 
 ---
 
-## What This Assignment Is
+## Overview
 
-This is a backend engineering evaluation given during campus placement. It tests real-world backend skills across three areas:
+This repository contains the complete backend evaluation submission for the Affordmed campus hiring process. The assignment tests real-world backend engineering skills across three areas:
 
-1. **Authentication & Logging** — Register with a test server, get a Bearer token, and build a reusable logging middleware that sends structured logs to the server on every significant operation.
-2. **Algorithm Problem (Vehicle Maintenance Scheduler)** — Solve a classic optimization problem (0/1 Knapsack) by fetching real data from protected APIs and computing the best task schedule for each depot.
-3. **System Design + Code (Campus Notifications Microservice)** — Design a full notification platform across 6 progressive stages, from API design to database schema, query optimization, caching strategy, async processing, and a working priority inbox implementation.
-
-Everything is submitted to a single public GitHub repository. Frequent commits are required — a single end-of-test commit results in a lower score.
+1. **Logging Middleware** — A reusable logging package that sends structured logs to the evaluation server
+2. **Vehicle Maintenance Scheduler** — An optimization microservice using the 0/1 Knapsack algorithm
+3. **Campus Notifications Microservice** — A full system design + working backend across 6 progressive stages
 
 ---
 
 ## Repository Structure
 
 ```
-ap23110011309/
-├── logging_middleware/              # Reusable logging package (Pre-Test Setup)
-│   ├── index.js                     # Log() function — posts logs to eval server
-│   ├── package.json
-│   └── test.js                      # Quick test for the middleware
+AP23110011309/
 │
-├── vehicle_maintence_scheduler/     # Task 1: Knapsack optimization microservice
-│   ├── index.js                     # Main solver — fetches data, runs knapsack, prints results
+├── logging_middleware/
+│   ├── index.js                  # Reusable Log() function
+│   ├── test.js                   # Test script for the middleware
 │   ├── package.json
-│   └── .env                         # AUTH_TOKEN and BASE_URL
+│   └── logging_test.png          # Screenshot: log created successfully
 │
-├── notification_app_be/             # Task 2: Campus Notifications backend
-│   ├── index.js                     # Express REST API server
-│   ├── priority_inbox.js            # Stage 6: standalone priority inbox script
+├── vehicle_maintence_scheduler/
+│   ├── index.js                  # Main knapsack solver
 │   ├── package.json
-│   └── .env                         # AUTH_TOKEN and BASE_URL
+│   ├── .env                      # AUTH_TOKEN and BASE_URL
+│   └── screenshots/
+│       ├── output-1.png          # Depot 1 output
+│       ├── output-2.png          # Depot 2 output
+│       ├── output-3.png          # Depot 3 output
+│       ├── output-4.png          # Depot 4 output
+│       ├── output-5.png          # Depot 5 output
+│       └── output_log.txt        # Full text output of all depots
 │
-├── notification_system_design.md    # Task 2: All 6 stages of system design
-├── get_token.js                     # Helper: fetches a fresh Bearer token
+├── notification_app_be/
+│   ├── index.js                  # Express REST API server
+│   ├── priority_inbox.js         # Stage 6: Priority inbox using min-heap
+│   ├── package.json
+│   ├── .env                      # AUTH_TOKEN and BASE_URL
+│   └── screenshots/
+│       ├── health.png            # GET /health
+│       ├── all_notifications.png # GET /notifications
+│       ├── priority.png          # GET /notifications/priority?n=10
+│       ├── unread.png            # GET /notifications/unread
+│       ├── type_placement.png    # GET /notifications/type/Placement
+│       ├── type_result.png       # GET /notifications/type/Result
+│       ├── type_event.png        # GET /notifications/type/Event
+│       └── priority_inbox.png    # Terminal output of priority_inbox.js
+│
+├── notification_system_design.md # All 6 stages of system design
+├── get_token.js                  # Helper: fetches a fresh Bearer token
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## Pre-Test Setup — Logging Middleware
+## Pre-Test Setup
 
-Before any code was written, the following steps were completed:
+### Registration
+Registered with the Affordmed evaluation server to obtain a unique `clientID` and `clientSecret`:
 
-### 1. Registration
-Called the registration API once to obtain a unique `clientID` and `clientSecret`:
 ```
 POST http://20.207.122.201/evaluation-service/register
 ```
+
 ```json
 {
   "email": "priyanka_jakkampudi@srmap.edu.in",
   "name": "priyanka jakkampudi",
-  "mobileNo": "<mobile>",
-  "githubUsername": "<github-username>",
   "rollNo": "ap23110011309",
-  "accessCode": "QkbpxH"
+  "accessCode": "QkbpxH",
+  "githubUsername": "Priyanka-2027"
 }
 ```
 
-### 2. Authentication
-Used the credentials to get a Bearer token:
+### Authentication
+Used credentials to obtain a Bearer token:
+
 ```
 POST http://20.207.122.201/evaluation-service/auth
 ```
-Returns a JWT Bearer token used in the `Authorization` header for all protected API calls.
 
-### 3. Logging Middleware
-Built a reusable `Log(stack, level, package, message, token)` function in `logging_middleware/index.js`.
+This token is used in the `Authorization: Bearer <token>` header for all protected API calls. The token auto-refreshes on startup and retries on 401 responses.
 
-Every time it is called, it sends a POST request to:
+---
+
+## Part 1 — Logging Middleware
+
+### Location
+`logging_middleware/index.js`
+
+### What it does
+A reusable `Log(stack, level, package, message, token)` function that sends every log entry as a POST request to the evaluation server instead of using `console.log` or any built-in logger.
+
 ```
 POST http://20.207.122.201/evaluation-service/logs
 Authorization: Bearer <token>
@@ -89,37 +114,60 @@ Authorization: Bearer <token>
 }
 ```
 
-**Allowed values (all lowercase):**
+### Allowed values
 
-| Field   | Allowed Values |
-|---------|----------------|
-| stack   | `backend`, `frontend` |
-| level   | `debug`, `info`, `warn`, `error`, `fatal` |
+| Field | Values |
+|-------|--------|
+| stack | `backend`, `frontend` |
+| level | `debug`, `info`, `warn`, `error`, `fatal` |
 | package (backend) | `cache`, `controller`, `cron_job`, `db`, `domain`, `handler`, `repository`, `route`, `service` |
-| package (shared)  | `auth`, `config`, `middleware`, `utils` |
+| package (shared) | `auth`, `config`, `middleware`, `utils` |
 
-This middleware is imported and used throughout all other code. No `console.log` or built-in loggers are used anywhere.
+### Key features
+- Validates all inputs before sending
+- Automatically truncates messages longer than 48 characters (API limit)
+- Silently fails so logging never crashes the main application
+- Used throughout all other code — no `console.log` anywhere
+
+### How to test
+```bash
+cd logging_middleware
+npm install
+node test.js
+```
+
+Expected output:
+```
+Testing logging middleware...
+Token obtained successfully.
+Log response: { logID: 'uuid', message: 'log created successfully' }
+```
 
 ---
 
-## Task 1 — Vehicle Maintenance Scheduler
+## Part 2 — Vehicle Maintenance Scheduler
+
+### Location
+`vehicle_maintence_scheduler/index.js`
 
 ### Problem Statement
-A logistics company has multiple depots. Each depot has a daily budget of mechanic-hours. There are many vehicle maintenance tasks, each with a `Duration` (hours needed) and an `Impact` score (how important it is). The goal is to pick the best combination of tasks for each depot that:
-- Does **not exceed** the depot's mechanic-hour budget
-- **Maximises** the total impact score
+A logistics company has multiple depots. Each depot has a daily budget of mechanic-hours. There are many vehicle maintenance tasks, each with:
+- `Duration` — hours required to complete the task
+- `Impact` — importance score of completing the task
+
+**Goal:** For each depot, select the best combination of tasks that maximises total Impact without exceeding the MechanicHours budget.
 
 This is the classic **0/1 Knapsack problem**.
 
-### Data Source
-Data is fetched live from two protected APIs (no hardcoding, no database):
+### Data Sources (live APIs — no hardcoding)
 
 **Depots API:**
 ```
 GET http://20.207.122.201/evaluation-service/depots
 Authorization: Bearer <token>
 ```
-Returns depots with their mechanic-hour budgets:
+
+Response:
 ```json
 {
   "depots": [
@@ -137,7 +185,8 @@ Returns depots with their mechanic-hour budgets:
 GET http://20.207.122.201/evaluation-service/vehicles
 Authorization: Bearer <token>
 ```
-Returns tasks with their duration and impact:
+
+Response:
 ```json
 {
   "vehicles": [
@@ -147,32 +196,39 @@ Returns tasks with their duration and impact:
 }
 ```
 
-### Algorithm
-A standard bottom-up dynamic programming knapsack is used:
-- `dp[i][w]` = maximum impact achievable using the first `i` tasks with `w` hours available
-- After filling the DP table, backtrack to find which tasks were selected
-- Time complexity: **O(N × W)** where N = number of tasks, W = mechanic-hour budget
+### Algorithm — Dynamic Programming (0/1 Knapsack)
 
-### How to Run
+```
+dp[i][w] = maximum impact using first i tasks with w hours available
+
+For each task i and each budget w:
+  - Don't take task i: dp[i][w] = dp[i-1][w]
+  - Take task i (if it fits): dp[i][w] = max(dp[i][w], dp[i-1][w-duration] + impact)
+
+Backtrack through dp table to find which tasks were selected.
+```
+
+**Time complexity:** O(N × W) where N = number of tasks, W = mechanic-hour budget  
+**Why DP over greedy?** Greedy (sort by impact/duration ratio) does not guarantee the optimal solution for 0/1 knapsack. DP always finds the true optimum.
+
+### How to run
 ```bash
 cd vehicle_maintence_scheduler
 npm install
 node index.js
 ```
 
-The script auto-fetches a fresh token, fetches depots and vehicles, runs the knapsack for each depot, and prints the optimal schedule.
-
-### Sample Output
+### Sample output
 ```
 ========================================
 Depot ID       : 1
 Budget (hrs)   : 60
-Hours Used     : 59
-Total Impact   : 109
-Tasks Scheduled: 15
+Hours Used     : 60
+Total Impact   : 119
+Tasks Scheduled: 18
 Tasks:
-  - TaskID: 05f80a9c-... | Duration: 3h | Impact: 7
-  - TaskID: 300c8465-... | Duration: 7h | Impact: 9
+  - TaskID: bb68e6db-... | Duration: 1h | Impact: 5
+  - TaskID: 82ab765f-... | Duration: 4h | Impact: 8
   ...
 ========================================
 All depots processed successfully.
@@ -180,45 +236,21 @@ All depots processed successfully.
 
 ---
 
-## Task 2 — Campus Notifications Microservice
+## Part 3 — Campus Notifications Microservice
+
+### Location
+`notification_app_be/index.js`  
+`notification_app_be/priority_inbox.js`  
+`notification_system_design.md`
 
 ### Problem Statement
-Build a backend system for a campus notification platform where students receive real-time updates about Placements, Events, and Results. This task is split into 6 progressive stages.
-
-### Stage Overview
-
-| Stage | Type | What It Covers |
-|-------|------|----------------|
-| 1 | Design | REST API design, JSON schemas, real-time mechanism |
-| 2 | Design | Database choice, schema, queries, scaling |
-| 3 | Design | Query analysis, indexing strategy, optimisation |
-| 4 | Design | Caching and performance strategies |
-| 5 | Design | Async processing, fault tolerance, queue-based redesign |
-| 6 | Code   | Working priority inbox using a min-heap |
-
-Full design responses are in `notification_system_design.md`.
+Build a backend system for a campus notification platform where students receive real-time updates about Placements, Events, and Results. This is split into 6 progressive stages.
 
 ---
 
-### REST API (Express Server)
+### REST API Server
 
-The notification backend runs on port 3000 and exposes these endpoints:
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/notifications` | All notifications |
-| GET | `/notifications/unread` | All notifications sorted by recency |
-| GET | `/notifications/priority?n=10` | Top N by priority + recency |
-| GET | `/notifications/type/:type` | Filter by `Placement`, `Result`, or `Event` |
-
-Data is fetched live from:
-```
-GET http://20.207.122.201/evaluation-service/notifications
-Authorization: Bearer <token>
-```
-
-### How to Run
+**How to run:**
 ```bash
 cd notification_app_be
 npm install
@@ -226,66 +258,105 @@ node index.js
 # Server starts on http://localhost:3000
 ```
 
-### Stage 6 — Priority Inbox
+**Endpoints:**
 
-Fetches all notifications and returns the top N by priority using a **min-heap** (O(M log N)):
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check — returns status and timestamp |
+| GET | `/notifications` | All notifications from the evaluation server |
+| GET | `/notifications/unread` | All notifications sorted by recency (newest first) |
+| GET | `/notifications/priority?n=10` | Top N notifications by priority + recency |
+| GET | `/notifications/type/:type` | Filter by `Placement`, `Result`, or `Event` |
 
-- Priority order: **Placement (3) > Result (2) > Event (1)**
-- Within the same type, **newer notifications rank higher**
-- Score formula: `score = priorityWeight × 10^13 + timestampMs`
-- A min-heap of size N is maintained — when it exceeds N, the lowest-scored item is evicted
-
-This approach handles streaming new notifications efficiently without re-sorting the full list each time.
-
-```bash
-cd notification_app_be
-node priority_inbox.js 10   # get top 10
-node priority_inbox.js 20   # get top 20
+**Data source:**
+```
+GET http://20.207.122.201/evaluation-service/notifications
+Authorization: Bearer <token>
 ```
 
-**Sample Output:**
+Each notification has:
+```json
+{
+  "ID": "uuid",
+  "Type": "Placement | Result | Event",
+  "Message": "string",
+  "Timestamp": "2026-04-22 17:51:30"
+}
+```
+
+---
+
+### Stage 6 — Priority Inbox
+
+**Location:** `notification_app_be/priority_inbox.js`
+
+**How to run:**
+```bash
+cd notification_app_be
+node priority_inbox.js 10    # top 10
+node priority_inbox.js 20    # top 20
+```
+
+**Priority order:** Placement (3) > Result (2) > Event (1)  
+**Secondary sort:** Newer timestamp wins within the same type
+
+**Algorithm — Min-Heap (O(M log N))**
+
+Each notification gets a score:
+```
+score = priorityWeight × 10^13 + timestampMilliseconds
+```
+
+A min-heap of size N is maintained as notifications are processed:
+- Push each notification onto the heap
+- If heap size exceeds N, pop the minimum (lowest score) — evicting the least important
+- Final result: extract all from heap, sort descending
+
+**Why min-heap over sorting?**
+- Sorting all M notifications: O(M log M)
+- Min-heap of size N: O(M log N)
+- When N << M (e.g., top 10 out of 10,000), heap is significantly faster
+- Handles streaming new notifications naturally — each new item processed in O(log N)
+
+**Sample output:**
 ```
 Top 10 Priority Notifications (Placement > Result > Event, then by recency):
 
 Rank | Type       | Message                          | Timestamp
 -----|------------|----------------------------------|--------------------
-   1 | Placement  | Booking Holdings Inc. hiring     | 2026-05-01 23:44:21
-   2 | Placement  | Eli Lilly and Company hiring     | 2026-05-01 23:43:57
-   3 | Placement  | Amazon.com Inc. hiring           | 2026-05-01 18:14:09
+   1 | Placement  | Advanced Micro Devices Inc. hiri | 2026-05-02 04:30:27
+   2 | Placement  | Booking Holdings Inc. hiring     | 2026-05-01 14:30:03
+   3 | Placement  | Advanced Micro Devices Inc. hiri | 2026-05-01 08:29:39
+   4 | Result     | end-sem                          | 2026-05-02 05:59:27
+   5 | Result     | external                         | 2026-05-02 03:29:57
    ...
-   8 | Result     | end-sem                          | 2026-05-02 00:13:39
-   9 | Result     | end-sem                          | 2026-05-01 22:44:03
-  10 | Result     | internal                         | 2026-05-01 18:13:27
+Total fetched: 20 | Displayed: 10
 ```
 
 ---
 
-## Key Technical Decisions
+### System Design (All 6 Stages)
 
-### Why 0/1 Knapsack (DP) for the scheduler?
-The problem is exactly the knapsack problem — tasks are either included or not (no partial scheduling), and we want to maximise impact within a fixed budget. DP gives the **optimal solution** in polynomial time. Greedy approaches (e.g., sort by impact/duration ratio) do not guarantee optimality for 0/1 knapsack.
+Full design is in `notification_system_design.md`. Summary:
 
-### Why SSE for real-time notifications?
-Server-Sent Events are one-directional (server → client), which is exactly what notifications require. They work over standard HTTP, require no extra protocol, and clients auto-reconnect on disconnect. WebSockets would add unnecessary complexity for a read-only notification stream.
-
-### Why PostgreSQL for the notification database?
-Notifications have a fixed, well-defined schema. SQL gives efficient indexed queries on `student_id`, `is_read`, `type`, and `created_at`. ACID compliance ensures no notification is lost. A composite index on `(student_id, is_read, created_at DESC)` makes the most common query (unread notifications for a student) very fast.
-
-### Why a message queue for notify_all?
-Sending 50,000 emails sequentially in a loop is slow (~83 minutes at 100ms/email) and has no fault tolerance. A queue decouples the API response from the actual delivery, allows parallel workers, and enables automatic retry with exponential backoff on failure.
-
-### Why a min-heap for the priority inbox?
-Sorting all M notifications is O(M log M). A min-heap of size N processes M notifications in O(M log N). When N << M (e.g., top 10 out of 10,000), this is significantly faster and naturally handles streaming new notifications — each new item is processed in O(log N) without touching the rest.
+| Stage | What it covers |
+|-------|----------------|
+| **Stage 1** | REST API design — endpoints, JSON schemas, real-time via SSE |
+| **Stage 2** | PostgreSQL chosen, schema design, queries for all Stage 1 APIs, scaling strategies |
+| **Stage 3** | Slow query analysis, indexing strategy, optimised queries |
+| **Stage 4** | Redis caching, pagination, SSE push — performance strategies with tradeoffs |
+| **Stage 5** | Redesign of sequential notify_all using message queues, parallel workers, retry with exponential backoff |
+| **Stage 6** | Min-heap priority inbox implementation with explanation |
 
 ---
 
 ## Token Management
 
-The evaluation server issues short-lived JWT tokens (~15 minutes). Both the scheduler and notification server automatically fetch a fresh token on startup and retry with a new token on any 401 response. A standalone helper is also provided:
+The evaluation server issues short-lived JWT tokens (~15 minutes). All services handle this automatically:
 
-```bash
-node get_token.js   # prints a fresh token to the console
-```
+- **On startup:** Always fetch a fresh token before doing anything
+- **On 401 response:** Automatically refresh token and retry the request once
+- **Manual refresh:** Run `node get_token.js` from the root folder anytime
 
 ---
 
@@ -293,6 +364,6 @@ node get_token.js   # prints a fresh token to the console
 
 - No `console.log` or built-in loggers — all logging goes through the custom `Log()` middleware
 - No user registration or login in the application — users are assumed pre-authorised
-- No hardcoded data — all task and notification data is fetched live from the evaluation APIs
-- No external algorithm libraries — knapsack and min-heap are implemented from scratch
-- Production-grade code standards: proper naming, structured folders, descriptive comments
+- No hardcoded task/notification data — all data fetched live from evaluation APIs
+- No external algorithm libraries — knapsack DP and min-heap implemented from scratch
+- Production-grade code: proper naming conventions, structured folders, descriptive comments throughout
