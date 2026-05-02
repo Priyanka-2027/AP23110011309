@@ -2,8 +2,33 @@ require("dotenv").config();
 const axios = require("axios");
 const { Log } = require("../logging_middleware/index");
 
-const TOKEN = process.env.AUTH_TOKEN;
-const BASE_URL = process.env.BASE_URL;
+const BASE_URL = process.env.BASE_URL || "http://20.207.122.201/evaluation-service";
+let TOKEN = process.env.AUTH_TOKEN;
+
+async function refreshToken() {
+  const response = await axios.post(`${BASE_URL}/auth`, {
+    email: "priyanka_jakkampudi@srmap.edu.in",
+    name: "priyanka jakkampudi",
+    rollNo: "ap23110011309",
+    accessCode: "QkbpxH",
+    clientID: "936a1601-9979-448c-9e9d-d45682b9a3b8",
+    clientSecret: "PZkCSnVafJJfzpfW",
+  });
+  TOKEN = response.data.access_token;
+  return TOKEN;
+}
+
+async function fetchWithRetry(url) {
+  try {
+    return await axios.get(url, { headers: { Authorization: `Bearer ${TOKEN}` } });
+  } catch (err) {
+    if (err.response?.status === 401) {
+      await refreshToken();
+      return await axios.get(url, { headers: { Authorization: `Bearer ${TOKEN}` } });
+    }
+    throw err;
+  }
+}
 
 const PRIORITY_WEIGHT = {
   Placement: 3,
@@ -115,25 +140,20 @@ function getTopN(notifications, n) {
 async function main() {
   const n = parseInt(process.argv[2]) || 10;
 
-  await Log("backend", "info", "service", `Priority Inbox started. Fetching top ${n} notifications.`, TOKEN);
+  // Always get a fresh token on startup
+  await refreshToken();
+
+  await Log("backend", "info", "service", `Priority Inbox: fetching top ${n}.`, TOKEN);
 
   try {
-    const response = await axios.get(`${BASE_URL}/notifications`, {
-      headers: { Authorization: `Bearer ${TOKEN}` },
-    });
+    const response = await fetchWithRetry(`${BASE_URL}/notifications`);
 
     const notifications = response.data.notifications;
-    await Log("backend", "info", "service", `Fetched ${notifications.length} notifications from server.`, TOKEN);
+    await Log("backend", "info", "service", `Fetched ${notifications.length} notifications.`, TOKEN);
 
     const topN = getTopN(notifications, n);
 
-    await Log(
-      "backend",
-      "info",
-      "domain",
-      `Computed top ${topN.length} priority notifications using min-heap (O(M log N)).`,
-      TOKEN
-    );
+    await Log("backend", "info", "domain", `Top ${topN.length} computed via min-heap.`, TOKEN);
 
     console.log(`\nTop ${n} Priority Notifications (Placement > Result > Event, then by recency):\n`);
     console.log("Rank | Type       | Message                          | Timestamp");
@@ -146,7 +166,7 @@ async function main() {
 
     console.log(`\nTotal fetched: ${notifications.length} | Displayed: ${topN.length}`);
   } catch (err) {
-    await Log("backend", "fatal", "service", `Priority Inbox failed: ${err.message}`, TOKEN);
+    await Log("backend", "fatal", "service", `Priority Inbox error: ${err.message}`.substring(0, 48), TOKEN);
     console.error("Error:", err.message);
     process.exit(1);
   }

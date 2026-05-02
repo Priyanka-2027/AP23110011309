@@ -3,12 +3,35 @@ const axios = require("axios");
 const { Log } = require("../logging_middleware/index");
 
 const BASE_URL = process.env.BASE_URL;
-const TOKEN = process.env.AUTH_TOKEN;
+let TOKEN = process.env.AUTH_TOKEN;
 
-const headers = {
-  Authorization: `Bearer ${TOKEN}`,
-  "Content-Type": "application/json",
+const AUTH_CREDS = {
+  email: "priyanka_jakkampudi@srmap.edu.in",
+  name: "priyanka jakkampudi",
+  rollNo: "ap23110011309",
+  accessCode: "QkbpxH",
+  clientID: "936a1601-9979-448c-9e9d-d45682b9a3b8",
+  clientSecret: "PZkCSnVafJJfzpfW",
 };
+
+async function refreshToken() {
+  const response = await axios.post(`${BASE_URL}/auth`, AUTH_CREDS);
+  TOKEN = response.data.access_token;
+  console.log("[Auth] Token refreshed.");
+  return TOKEN;
+}
+
+async function authGet(url) {
+  try {
+    return await axios.get(url, { headers: { Authorization: `Bearer ${TOKEN}` } });
+  } catch (err) {
+    if (err.response?.status === 401) {
+      await refreshToken();
+      return await axios.get(url, { headers: { Authorization: `Bearer ${TOKEN}` } });
+    }
+    throw err;
+  }
+}
 
 /**
  * Fetch all depots from the evaluation server.
@@ -17,7 +40,7 @@ const headers = {
 async function fetchDepots() {
   await Log("backend", "info", "service", "Fetching depots from server.", TOKEN);
   try {
-    const response = await axios.get(`${BASE_URL}/depots`, { headers });
+    const response = await authGet(`${BASE_URL}/depots`);
     await Log("backend", "info", "service", `Fetched ${response.data.depots.length} depots.`, TOKEN);
     return response.data.depots;
   } catch (err) {
@@ -26,14 +49,10 @@ async function fetchDepots() {
   }
 }
 
-/**
- * Fetch all vehicles/tasks from the evaluation server.
- * Each vehicle has: { TaskID, Duration, Impact }
- */
 async function fetchVehicles() {
   await Log("backend", "info", "service", "Fetching vehicles from server.", TOKEN);
   try {
-    const response = await axios.get(`${BASE_URL}/vehicles`, { headers });
+    const response = await authGet(`${BASE_URL}/vehicles`);
     await Log("backend", "info", "service", `Fetched ${response.data.vehicles.length} vehicles.`, TOKEN);
     return response.data.vehicles;
   } catch (err) {
@@ -89,6 +108,7 @@ function knapsack(tasks, budget) {
  * For each depot, runs the knapsack algorithm and prints the optimal schedule.
  */
 async function main() {
+  await refreshToken();
   await Log("backend", "info", "service", "Vehicle Maintenance Scheduler started.", TOKEN);
 
   try {
